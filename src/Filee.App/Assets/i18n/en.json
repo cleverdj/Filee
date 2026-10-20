@@ -585,6 +585,7 @@
   "theme.reduce_motion": "Reduce animations",
   "theme.reduce_motion_hint": "Recommended for older PCs. Turns off transitions and the donut's bounce.",
   "theme.preview": "Preview",
+  "theme.preview_sample_hint": "Sample controls, shown only to preview the theme's look — they don't change any setting.",
 
   "engines.title": "Conversion engines",
   "engines.description": "Filee picks the best available engine for each conversion.\nWhen several can do the same job, the higher one wins.",

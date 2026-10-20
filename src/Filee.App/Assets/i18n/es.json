@@ -569,6 +569,7 @@
   "theme.reduce_motion": "Reducir las animaciones",
   "theme.reduce_motion_hint": "Recomendado para PC antiguos. Desactiva las transiciones y el rebote del menú circular.",
   "theme.preview": "Vista previa",
+  "theme.preview_sample_hint": "Controles de muestra que solo sirven para previsualizar el tema; no cambian ningún ajuste.",
   "engines.title": "Motores de conversión",
   "engines.description": "Filee elige el mejor motor disponible para cada conversión.\nCuando varios pueden hacer el mismo trabajo, gana el que está más arriba.",
   "engines.available": "Disponible",

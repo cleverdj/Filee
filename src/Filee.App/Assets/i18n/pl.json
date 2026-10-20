@@ -585,6 +585,7 @@
   "theme.reduce_motion": "Ogranicz animacje",
   "theme.reduce_motion_hint": "Zalecane na starszych komputerach. Wyłącza przejścia i odbijanie pierścienia.",
   "theme.preview": "Podgląd",
+  "theme.preview_sample_hint": "Przykładowe elementy pokazujące wygląd motywu — nie zmieniają żadnego ustawienia.",
 
   "engines.title": "Silniki konwersji",
   "engines.description": "Filee wybiera najlepszy dostępny silnik dla każdej konwersji.\nGdy kilka potrafi to samo, wygrywa wyższy.",

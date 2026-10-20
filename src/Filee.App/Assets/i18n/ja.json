@@ -569,6 +569,7 @@
   "theme.reduce_motion": "アニメーションを減らす",
   "theme.reduce_motion_hint": "古いPCにおすすめです。画面切り替え時のアニメーションと、ドーナツメニューの弾む動きを無効にします。",
   "theme.preview": "プレビュー",
+  "theme.preview_sample_hint": "テーマの見た目を確認するための見本です。実際の設定は変更されません。",
   "engines.title": "変換エンジン",
   "engines.description": "Fileeは変換ごとに、利用可能な最適なエンジンを選びます。\n同じ変換ができるエンジンが複数ある場合は、一覧で上にあるものが優先されます。",
   "engines.available": "利用可能",

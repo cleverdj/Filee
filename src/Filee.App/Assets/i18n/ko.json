@@ -585,6 +585,7 @@
   "theme.reduce_motion": "애니메이션 줄이기",
   "theme.reduce_motion_hint": "저사양 PC에 권장해요. 전환 효과와 도넛의 튕김 효과를 꺼요.",
   "theme.preview": "미리보기",
+  "theme.preview_sample_hint": "테마 모습을 보여주기 위한 예시 컨트롤이에요. 실제 설정을 바꾸지 않아요.",
 
   "engines.title": "변환 엔진",
   "engines.description": "Filee는 변환마다 쓸 수 있는 엔진 중 가장 좋은 것을 골라요.\n여러 엔진이 같은 변환을 할 수 있으면 목록 위쪽이 우선이에요.",
