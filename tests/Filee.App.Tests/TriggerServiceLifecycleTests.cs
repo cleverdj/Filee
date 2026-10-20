@@ -86,6 +86,36 @@ public sealed class TriggerServiceLifecycleTests
         }
     }
 
+    [AvaloniaFact]
+    public void Failed_start_clears_the_hook_so_start_can_retry()
+    {
+        // Simulates issue #189: on macOS, AXIsProcessTrusted() can report trusted a moment before the native hook
+        // (CGEventTapCreate under the hood) is actually able to start, so the very first Start() after permission is
+        // granted can fail. Before this fix, a failed Run() left _hook non-null forever and every later Start()
+        // (including WatchForPermission's poll) returned immediately without ever retrying.
+        var failing = new DelayedProvider { FailRun = true };
+        using var service = Create(failing, () => { });
+        service.Start();
+        Assert.True(SpinWait.SpinUntil(() => service.Error is not null, 2000));
+        Assert.False(service.IsRunning);
+
+        var provider = new DelayedProvider();
+        provider.AllowExit.Set();
+        var retrying = new TriggerService(new NullPlatformServicesForHooks(), NullLogger<TriggerService>.Instance,
+            () => new EventLoopGlobalHook(provider, useBackgroundThreadForEventLoop: true));
+        try
+        {
+            // Start() must be retryable right after a failed attempt (what WatchForPermission relies on).
+            retrying.Start();
+            Assert.True(SpinWait.SpinUntil(() => provider.Runs == 1, 2000));
+            Assert.True(retrying.IsRunning);
+        }
+        finally
+        {
+            retrying.Dispose();
+        }
+    }
+
     private const EventMask Held = EventMask.LeftCtrl | EventMask.Button1;
 
     [AvaloniaFact]
@@ -214,6 +244,7 @@ public sealed class TriggerServiceLifecycleTests
         public readonly ManualResetEventSlim StopRequested = new();
         public readonly ManualResetEventSlim AllowExit = new();
         public bool FailStop;
+        public bool FailRun;
         public bool KeyTypedEnabled { get; set; }
         public int Runs => Volatile.Read(ref _runs);
         public bool HasCallback { get { lock (_gate) return _callback is not null; } }
@@ -226,6 +257,8 @@ public sealed class TriggerServiceLifecycleTests
         {
             StopRequested.Reset();
             Interlocked.Increment(ref _runs);
+            if (FailRun)
+                return UioHookResult.Failure;
             StopRequested.Wait();
             AllowExit.Wait();
             return UioHookResult.Success;

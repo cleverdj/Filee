@@ -184,18 +184,42 @@ public sealed class TriggerService : IDisposable
             // Own the actual Run thread. SharpHook's RunAsync task completes BEFORE its finally
             // clears the native callback, so awaiting that task alone is not a safe restart barrier.
             var hook = _hook;
+            var wasWaitingForPermission = NeedsPermission;
             _hookThread = new Thread(() =>
             {
+                var failed = false;
                 try
                 {
                     hook.Run();
                 }
                 catch (Exception ex)
                 {
+                    failed = true;
                     ReportFailure(ex.GetBaseException(), "Global input hook failed; gestures are unavailable");
                 }
                 finally
                 {
+                    // Run() throwing happens on this background thread, outside the try/catch around Start() that
+                    // only guards the synchronous set-up (_createHook, event subscriptions). Without clearing these
+                    // here, _hook stays non-null forever and every later Start() call (including the macOS permission
+                    // poll in WatchForPermission) returns immediately without retrying (issue #189: gestures remain
+                    // stopped after enabling Accessibility because the first retry's hook silently failed to start).
+                    if (failed)
+                    {
+                        Post(() =>
+                        {
+                            if (_hook == hook)
+                            {
+                                _hook = null;
+                                _hookThread = null;
+                            }
+                            // macOS: AXIsProcessTrusted() can flip to true a moment before CGEventTapCreate (used by
+                            // libuiohook) is actually able to create a working event tap. One extra retry shortly
+                            // after permission was just granted resolves this without asking the user to quit Filee.
+                            if (wasWaitingForPermission && OperatingSystem.IsMacOS() && _hook is null)
+                                DispatcherTimerRetry();
+                        });
+                    }
                     NotifyStatus();
                 }
             })
@@ -225,6 +249,24 @@ public sealed class TriggerService : IDisposable
     /// <summary>libuiohook's loader could not dlopen its Linux back end (ErrorLinuxLoadBackend).</summary>
     internal static bool IsMissingLinuxBackend(Exception exception) =>
         exception is HookException { Result: UioHookResult.ErrorLinuxLoadBackend };
+
+    private Timer? _startRetry;
+
+    /// <summary>
+    /// One-shot delayed retry of <see cref="Start"/>, used only right after macOS Accessibility permission was just
+    /// granted and the first hook attempt failed (see the comment in <see cref="Start"/>). Not a general auto-retry
+    /// loop: a second failure is reported normally and needs a user action (Settings → Triggers → Retry, or restart).
+    /// </summary>
+    private void DispatcherTimerRetry()
+    {
+        _startRetry?.Dispose();
+        _startRetry = new Timer(_ =>
+        {
+            _startRetry?.Dispose();
+            _startRetry = null;
+            Post(Start);
+        }, null, TimeSpan.FromMilliseconds(750), Timeout.InfiniteTimeSpan);
+    }
 
     // Wayland (experimental): presses carry no position and a mouse only moves relatively, while tablets and virtual
     // machines still send absolute moves. So a running estimate is kept: absolute moves set it, relative moves add to
@@ -326,6 +368,8 @@ public sealed class TriggerService : IDisposable
     {
         _permissionWatch?.Dispose();
         _permissionWatch = null;
+        _startRetry?.Dispose();
+        _startRetry = null;
         try
         {
             _hook?.Dispose();
